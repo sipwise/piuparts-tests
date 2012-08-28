@@ -1,0 +1,39 @@
+#!/bin/sh
+
+rm -f piuparts.tap
+
+[ -d artifacts ] || { echo "Error: directory artifacts does not exist." >&2 ; exit 1 ; }
+
+[ -n "$release" ] || { echo "Error: release variable not set." >&2 ; exit 1; }
+
+ce_pro_carrier() {
+  echo "*** Running for CE packages ***"
+  if find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\* | grep -q '.' ; then
+    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution=squeeze piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\*) || true
+  fi
+  
+  echo "*** Running for PRO packages ***"
+  if find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\* | grep -q '.' ; then
+    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution=squeeze piuparts_wrapper $(find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\*) || true
+  fi
+  
+  echo "*** Running for CARRIER packages ***"
+  if find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\* | grep -q '.' ; then
+    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution=squeeze piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\*) || true
+  fi
+}
+
+RUN_CE_PRO_CARRIER=false # by default assume we don't have ce/pro/carrier specific packages
+find artifacts/ -name \*-ce\*      | grep -q '.' && RUN_CE_PRO_CARRIER=true
+find artifacts/ -name \*-pro\*     | grep -q '.' &&  RUN_CE_PRO_CARRIER=true
+find artifacts/ -name \*-carrier\* | grep -q '.' && RUN_CE_PRO_CARRIER=true
+
+if [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
+  echo "*** Found ce/pro/carrier specific packages, executing ce_pro_carrier ***"
+  ce_pro_carrier
+else
+  echo "*** No ce/pro/carrier specific packages found, executing for all artifacts/*.deb files ***"
+  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution=squeeze piuparts_wrapper artifacts/*.deb || true
+fi
+
+piuparts_tap piuparts.txt > piuparts.tap
