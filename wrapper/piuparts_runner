@@ -24,9 +24,9 @@ ce_pro_carrier() {
 }
 
 RUN_CE_PRO_CARRIER=false # by default assume we don't have ce/pro/carrier specific packages
-find artifacts/ -name \*-ce\*      | grep -q '.' && RUN_CE_PRO_CARRIER=true
-find artifacts/ -name \*-pro\*     | grep -q '.' &&  RUN_CE_PRO_CARRIER=true
-find artifacts/ -name \*-carrier\* | grep -q '.' && RUN_CE_PRO_CARRIER=true
+find artifacts/ -name '*-carrier-*' -or -name '*-carrier_*' | grep -q '.' && RUN_CE_PRO_CARRIER=true
+find artifacts/ -name '*-pro-*'     -or -name '*-pro_*'     | grep -q '.' && RUN_CE_PRO_CARRIER=true
+find artifacts/ -name '*-ce-*'      -or -name '*-ce_*'      | grep -q '.' && RUN_CE_PRO_CARRIER=true
 
 if [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
   echo "*** Found ce/pro/carrier specific packages, executing ce_pro_carrier ***"
