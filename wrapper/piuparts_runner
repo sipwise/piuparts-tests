@@ -6,20 +6,22 @@ rm -f piuparts.tap
 
 [ -n "$release" ] || { echo "Error: release variable not set." >&2 ; exit 1; }
 
+[ -n "$distribution" ] || distribution="squeeze"
+
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"
   if find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\* | grep -q '.' ; then
-    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution=squeeze piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\*) || true
+    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\*) || true
   fi
   
   echo "*** Running for PRO packages ***"
   if find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\* | grep -q '.' ; then
-    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution=squeeze piuparts_wrapper $(find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\*) || true
+    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\*) || true
   fi
   
   echo "*** Running for CARRIER packages ***"
   if find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\* | grep -q '.' ; then
-    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution=squeeze piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\*) || true
+    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\*) || true
   fi
 }
 
@@ -33,7 +35,7 @@ if [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
   ce_pro_carrier
 else
   echo "*** No ce/pro/carrier specific packages found, executing for all artifacts/*.deb files ***"
-  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution=squeeze piuparts_wrapper artifacts/*.deb || true
+  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper artifacts/*.deb || true
 fi
 
 piuparts_tap piuparts.txt > piuparts.tap
