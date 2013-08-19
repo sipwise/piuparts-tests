@@ -6,7 +6,11 @@ rm -f piuparts.tap
 
 [ -n "$release" ] || { echo "Error: release variable not set." >&2 ; exit 1; }
 
-[ -n "$distribution" ] || distribution="squeeze"
+# adjust Debian/release depending on ngcp version
+case $release in
+  2.*) [ -n "$distribution" ] || distribution="squeeze" ;;
+    *) [ -n "$distribution" ] || distribution="wheezy" ;;
+esac
 
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"

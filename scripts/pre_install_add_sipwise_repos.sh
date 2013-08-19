@@ -11,7 +11,7 @@
 set -e
 
 if [ -z "$release" ] ; then
-  release="2.5"
+  release="3.0"
   echo "*** No release variable set, using default [$release] ***"
 fi
 
@@ -22,6 +22,11 @@ case "$release" in
        echo "*** Installing autobuild signing key for release-trunk repository ***"
        type wget >/dev/null 2>&1 || apt-get -y install wget
        wget -O - http://deb.sipwise.com/autobuild/EE5E097D.asc | apt-key add -
+       [ -n "$distribution" ] || distribution="wheezy"
+       ;;
+     2.*) [ -n "$distribution" ] || distribution="squeeze"
+       ;;
+     *) [ -n "$distribution" ] || distribution="wheezy"
        ;;
 esac
 
@@ -39,11 +44,8 @@ if [ -n "$TRUNK_RELEASE" ] ; then
 # Sipwise repository
 deb http://deb.sipwise.com/autobuild/ release-trunk main
 
-# Sipwise squeeze backports
-deb http://deb.sipwise.com/squeeze-backports/ squeeze-backports main
-
-# Percona's high performance mysql builds
-deb http://deb.sipwise.com/percona/ squeeze main
+# Sipwise ${distribution} backports
+deb http://deb.sipwise.com/${distribution}-backports/ ${distribution}-backports main
 EOF
 
 else # no $TRUNK_RELEASE
@@ -53,13 +55,10 @@ else # no $TRUNK_RELEASE
 
 # Sipwise repository
 # deb http://deb.sipwise.com/autobuild/ release-trunk main
-deb http://deb.sipwise.com/spce/${release}/ squeeze main
+deb http://deb.sipwise.com/spce/${release}/ ${distribution} main
 
-# Sipwise squeeze backports
-deb http://deb.sipwise.com/squeeze-backports/ squeeze-backports main
-
-# Percona's high performance mysql builds
-deb http://deb.sipwise.com/percona/ squeeze main
+# Sipwise ${distribution} backports
+deb http://deb.sipwise.com/${distribution}-backports/ ${distribution}-backports main
 EOF
 fi
 
