@@ -39,7 +39,7 @@ if [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
   ce_pro_carrier
 else
   echo "*** No ce/pro/carrier specific packages found, executing for all artifacts/*.deb files ***"
-  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper artifacts/*.deb || true
+  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ MIRROR=http://deb.sipwise.com/debian distribution="$distribution" piuparts_wrapper artifacts/*.deb || true
 fi
 
 piuparts_tap piuparts.txt > piuparts.tap
