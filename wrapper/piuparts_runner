@@ -48,12 +48,12 @@ find artifacts/ -name '*-ce-*'      -or -name '*-ce_*'      | grep -q '.' && RUN
 RUN_UPGRADE_PACKAGES=false # by default assume we don't have the upgrade packages to deal with
 find artifacts/ -name 'ngcp-upgrade-*' | grep -q '.' && RUN_UPGRADE_PACKAGES=true
 
-if [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
-  echo "*** Found ce/pro/carrier specific packages, executing ce_pro_carrier ***"
-  ce_pro_carrier
-elif [ "$RUN_UPGRADE_PACKAGES" = "true" ] ; then
+if [ "$RUN_UPGRADE_PACKAGES" = "true" ] ; then
   echo "*** Found upgrade specific packages, executing upgrade_packages ***"
   upgrade_packages
+elif [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
+  echo "*** Found ce/pro/carrier specific packages, executing ce_pro_carrier ***"
+  ce_pro_carrier
 else
   echo "*** No ce/pro/carrier specific packages found, executing for all artifacts/*.deb files ***"
   sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ MIRROR=http://deb.sipwise.com/debian distribution="$distribution" DEBOOTSTRAP_OPTIONS="--keyring=/var/cache/pbuilder/base-${distribution}-amd64.cow/etc/apt/trusted.gpg" piuparts_wrapper artifacts/*.deb || true
