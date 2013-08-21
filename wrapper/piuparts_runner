@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 rm -f piuparts.tap
 
@@ -17,16 +17,27 @@ ce_pro_carrier() {
   if find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\* | grep -q '.' ; then
     sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\*) || true
   fi
-  
+
   echo "*** Running for PRO packages ***"
   if find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\* | grep -q '.' ; then
     sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\*) || true
   fi
-  
+
   echo "*** Running for CARRIER packages ***"
   if find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\* | grep -q '.' ; then
     sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\*) || true
   fi
+}
+
+upgrade_packages() {
+  for package in artifacts/*.deb ; do
+    if [[ $package =~ ngcp-upgrade-2.(2|4|5|6|7) ]] ; then
+      echo "*** Skipping outdated upgrade package $package ***"
+    else
+      echo "*** Running piuparts for package $package ***"
+      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+    fi
+  done
 }
 
 RUN_CE_PRO_CARRIER=false # by default assume we don't have ce/pro/carrier specific packages
@@ -34,9 +45,15 @@ find artifacts/ -name '*-carrier-*' -or -name '*-carrier_*' | grep -q '.' && RUN
 find artifacts/ -name '*-pro-*'     -or -name '*-pro_*'     | grep -q '.' && RUN_CE_PRO_CARRIER=true
 find artifacts/ -name '*-ce-*'      -or -name '*-ce_*'      | grep -q '.' && RUN_CE_PRO_CARRIER=true
 
+RUN_UPGRADE_PACKAGES=false # by default assume we don't have the upgrade packages to deal with
+find artifacts/ -name 'ngcp-upgrade-*' | grep -q '.' && RUN_UPGRADE_PACKAGES=true
+
 if [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
   echo "*** Found ce/pro/carrier specific packages, executing ce_pro_carrier ***"
   ce_pro_carrier
+elif [ "$RUN_UPGRADE_PACKAGES" = "true" ] ; then
+  echo "*** Found upgrade specific packages, executing upgrade_packages ***"
+  upgrade_packages
 else
   echo "*** No ce/pro/carrier specific packages found, executing for all artifacts/*.deb files ***"
   sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ MIRROR=http://deb.sipwise.com/debian distribution="$distribution" DEBOOTSTRAP_OPTIONS="--keyring=/var/cache/pbuilder/base-${distribution}-amd64.cow/etc/apt/trusted.gpg" piuparts_wrapper artifacts/*.deb || true
