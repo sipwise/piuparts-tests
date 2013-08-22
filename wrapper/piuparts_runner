@@ -30,14 +30,27 @@ ce_pro_carrier() {
 }
 
 hylafax_packages() {
-  echo "*** Running hylafaxplus-diva specific packages ***"
-  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f -name \*hylafaxplus-diva\*) || true
-
-  echo "*** Running hylafaxplus-iax specific packages ***"
-  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f -name \*hylafaxplus-iax\*) || true
-
-  echo "*** Running non-hylafaxplus packages ***"
-  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*hylafaxplus-diva\* ! -name \*hylafaxplus-iax\*) || true
+  for package in artifacts/*.deb ; do
+    if [[ $package =~ hylafaxplus-diva ]] ; then
+      echo "*** Running hylafaxplus-diva specific package $package ***"
+      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+    elif [[ $package =~ hylafaxplus-iax ]] ; then
+      echo "*** Running hylafaxplus-iax specific package $package ***"
+      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+    elif [[ $package =~ -ce ]] ; then
+      echo "*** Running CE package $package ***"
+      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+    elif [[ $package =~ -pro ]] ; then
+      echo "*** Running PRO package $package ***"
+      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+    elif [[ $package =~ -carrier ]] ; then
+      echo "*** Running carrier package $package ***"
+      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+    else
+      echo "*** Running piuparts for package $package ***"
+      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+    fi
+  done
 }
 
 upgrade_packages() {
