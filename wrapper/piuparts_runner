@@ -29,6 +29,17 @@ ce_pro_carrier() {
   fi
 }
 
+hylafax_packages() {
+  echo "*** Running hylafaxplus-diva specific packages ***"
+  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f -name \*hylafaxplus-diva\*) || true
+
+  echo "*** Running hylafaxplus-iax specific packages ***"
+  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f -name \*hylafaxplus-iax\*) || true
+
+  echo "*** Running non-hylafaxplus packages ***"
+  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*hylafaxplus-diva\* ! -name \*hylafaxplus-iax\*) || true
+}
+
 upgrade_packages() {
   for package in artifacts/*.deb ; do
     if [[ $package =~ ngcp-upgrade-2.(2|4|5|6|7) ]] ; then
@@ -48,7 +59,13 @@ find artifacts/ -name '*-ce-*'      -or -name '*-ce_*'      | grep -q '.' && RUN
 RUN_UPGRADE_PACKAGES=false # by default assume we don't have the upgrade packages to deal with
 find artifacts/ -name 'ngcp-upgrade-*' | grep -q '.' && RUN_UPGRADE_PACKAGES=true
 
-if [ "$RUN_UPGRADE_PACKAGES" = "true" ] ; then
+RUN_HYLAXFAX_PACKAGES=false # by default assume we don't have the hylafax packages to deal with
+find artifacts/ -name '*hylafaxplus-iax*' -or -name '*hylafaxplus-diva*' | grep -q '.' && RUN_HYLAXFAX_PACKAGES=true
+
+if [ "$RUN_HYLAXFAX_PACKAGES" = "true" ] ; then
+  echo "*** Found hylafax specific packages, executing hylafax_packages ***"
+  hylafax_packages
+elif [ "$RUN_UPGRADE_PACKAGES" = "true" ] ; then
   echo "*** Found upgrade specific packages, executing upgrade_packages ***"
   upgrade_packages
 elif [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
