@@ -14,6 +14,8 @@ case "$release" in
     release="${release%%-update}"
     release="${release%%-builddeps}"
     ;;
+  none)
+    release=3.1 # current default
 esac
 
 # adjust Debian/release depending on ngcp version
