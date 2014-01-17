@@ -10,8 +10,10 @@
 
 set -e
 
+default_release=3.1
+
 if [ -z "$release" ] ; then
-  release="3.0"
+  release="$default_release"
   echo "*** No release variable set, using default [$release] ***"
 fi
 
@@ -29,6 +31,15 @@ case "$release" in
      *) [ -n "$distribution" ] || distribution="wheezy"
        ;;
 esac
+
+echo "*** Testing availability of Debian repository for release $release ***"
+if wget -O /dev/null http://deb.sipwise.com/spce/${release}/dists/${distribution}/main/binary-amd64/Packages ; then
+  echo "*** Repository for release $release seems to be available, accepting. ***"
+else
+  echo "*** WARNING: Repository for requested release $release does not seem to exist. ***"
+  echo "***          Falling back to default release $default_release now. ***"
+  release="$default_release"
+fi
 
 cat > /etc/apt/preferences.d/sipwise << EOF
 Package: *
