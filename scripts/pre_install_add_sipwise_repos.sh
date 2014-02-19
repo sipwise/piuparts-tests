@@ -17,12 +17,14 @@ if [ -z "$release" ] ; then
   echo "*** No release variable set, using default [$release] ***"
 fi
 
+# make sure we can rely on wget being present for checks
+type wget >/dev/null 2>&1 || apt-get -y install wget
+
 case "$release" in
   trunk)
        echo "*** release variable is set to trunk, enabling TRUNK_RELEASE ***"
        TRUNK_RELEASE=true
        echo "*** Installing autobuild signing key for release-trunk repository ***"
-       type wget >/dev/null 2>&1 || apt-get -y install wget
        wget -O - http://deb.sipwise.com/autobuild/EE5E097D.asc | apt-key add -
        [ -n "$distribution" ] || distribution="wheezy"
        ;;
