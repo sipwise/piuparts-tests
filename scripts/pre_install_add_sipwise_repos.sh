@@ -20,6 +20,7 @@ fi
 # make sure we can rely on wget being present for checks
 type wget >/dev/null 2>&1 || apt-get -y install wget
 
+TRUNK_RELEASE=false
 case "$release" in
   trunk)
        echo "*** release variable is set to trunk, enabling TRUNK_RELEASE ***"
@@ -34,13 +35,17 @@ case "$release" in
        ;;
 esac
 
-echo "*** Testing availability of Debian repository for release $release ***"
-if wget -O /dev/null http://deb.sipwise.com/spce/${release}/dists/${distribution}/main/binary-amd64/Packages ; then
-  echo "*** Repository for release $release seems to be available, accepting. ***"
+if $TRUNK_RELEASE ; then
+  echo "*** Trunk release enabled, no need to check for Debian repository ***"
 else
-  echo "*** WARNING: Repository for requested release $release does not seem to exist. ***"
-  echo "***          Falling back to default release $default_release now. ***"
-  release="$default_release"
+  echo "*** Testing availability of Debian repository for release $release ***"
+  if wget -O /dev/null http://deb.sipwise.com/spce/${release}/dists/${distribution}/main/binary-amd64/Packages ; then
+    echo "*** Repository for release $release seems to be available, accepting. ***"
+  else
+    echo "*** WARNING: Repository for requested release $release does not seem to exist. ***"
+    echo "***          Falling back to default release $default_release now. ***"
+    release="$default_release"
+  fi
 fi
 
 cat > /etc/apt/preferences.d/sipwise << EOF
@@ -49,7 +54,7 @@ Pin: origin deb.sipwise.com
 Pin-Priority: 990
 EOF
 
-if [ -n "$TRUNK_RELEASE" ] ; then
+if $TRUNK_RELEASE ; then
   echo "*** TRUNK_RELEASE is set, using ***"
   cat > /etc/apt/sources.list.d/sipwise.list << EOF
 # NGCP_MANAGED_FILE - do not remove this line if it should be automatically handled
