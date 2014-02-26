@@ -60,7 +60,7 @@ if $TRUNK_RELEASE ; then
 # NGCP_MANAGED_FILE - do not remove this line if it should be automatically handled
 
 # Sipwise repository
-deb http://deb.sipwise.com/autobuild/ release-trunk main
+deb http://deb.sipwise.com/autobuild/ release-trunk-${distribution} main
 
 # Sipwise ${distribution} backports
 deb http://deb.sipwise.com/${distribution}-backports/ ${distribution}-backports main
@@ -72,7 +72,7 @@ else # no $TRUNK_RELEASE
 # NGCP_MANAGED_FILE - do not remove this line if it should be automatically handled
 
 # Sipwise repository
-# deb http://deb.sipwise.com/autobuild/ release-trunk main
+# deb http://deb.sipwise.com/autobuild/ release-trunk-${distribution} main
 deb http://deb.sipwise.com/spce/${release}/ ${distribution} main
 deb http://deb.sipwise.com/sppro/${release}/ ${distribution} main
 
