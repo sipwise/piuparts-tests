@@ -18,7 +18,10 @@ if [ -z "$release" ] ; then
 fi
 
 # make sure we can rely on wget being present for checks
-type wget >/dev/null 2>&1 || apt-get -y install wget
+type wget >/dev/null 2>&1 || apt-get --allow-unauthenticated -y install wget
+
+echo "** Setting up http://deb.sipwise.com/autobuild/680FBA8A.asc for apt-get usage ***"
+wget -O - http://deb.sipwise.com/autobuild/680FBA8A.asc | apt-key add -
 
 TRUNK_RELEASE=false
 case "$release" in
