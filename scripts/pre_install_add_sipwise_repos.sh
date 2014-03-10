@@ -51,9 +51,16 @@ else
   fi
 fi
 
+echo "*** apt-cache policy before /etc/apt/preferences.d/sipwise setup: ***"
+apt-cache policy
+
 cat > /etc/apt/preferences.d/sipwise << EOF
 Package: *
-Pin: origin deb.sipwise.com
+Pin: release o=Sipwise
+Pin-Priority: 990
+
+Package: *
+Pin: release o=The Sipwise VoIP platform
 Pin-Priority: 990
 EOF
 
@@ -87,5 +94,8 @@ fi
 apt-get update
 apt-get --allow-unauthenticated -y install ngcp-keyring
 apt-get update
+
+echo "*** apt-cache policy after /etc/apt/preferences.d/sipwise setup: ***"
+apt-cache policy
 
 ## END OF FILE #################################################################
