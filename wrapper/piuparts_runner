@@ -25,20 +25,24 @@ case $release in
     *) [ -n "$distribution" ] || distribution="wheezy" ;;
 esac
 
+[ -n "$mirror" ] || mirror='http://deb.sipwise.com/debian'
+
+piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ MIRROR=$mirror distribution=$distribution DEBOOTSTRAP_OPTIONS=--keyring=/var/cache/pbuilder/base-${distribution}-amd64.cow/etc/apt/trusted.gpg piuparts_wrapper"
+
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"
   if find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\* | grep -q '.' ; then
-    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\*) || true
+    $piuparts_cmdline $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\*) || true
   fi
 
   echo "*** Running for PRO packages ***"
   if find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\* | grep -q '.' ; then
-    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\*) || true
+    $piuparts_cmdline $(find artifacts/ -type f ! -name \*-ce\* ! -name \*-carrier\*) || true
   fi
 
   echo "*** Running for CARRIER packages ***"
   if find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\* | grep -q '.' ; then
-    sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\*) || true
+    $piuparts_cmdline $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\*) || true
   fi
 }
 
@@ -46,22 +50,22 @@ hylafax_packages() {
   for package in artifacts/*.deb ; do
     if [[ $package =~ hylafaxplus-diva ]] ; then
       echo "*** Running hylafaxplus-diva specific package $package ***"
-      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+      $piuparts_cmdline "$package" || true
     elif [[ $package =~ hylafaxplus-iax ]] ; then
       echo "*** Running hylafaxplus-iax specific package $package ***"
-      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+      $piuparts_cmdline "$package" || true
     elif [[ $package =~ -ce ]] ; then
       echo "*** Running CE package $package ***"
-      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+      $piuparts_cmdline "$package" || true
     elif [[ $package =~ -pro ]] ; then
       echo "*** Running PRO package $package ***"
-      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+      $piuparts_cmdline "$package" || true
     elif [[ $package =~ -carrier ]] ; then
       echo "*** Running carrier package $package ***"
-      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+      $piuparts_cmdline "$package" || true
     else
       echo "*** Running piuparts for package $package ***"
-      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+      $piuparts_cmdline "$package" || true
     fi
   done
 }
@@ -72,7 +76,7 @@ upgrade_packages() {
       echo "*** Skipping outdated upgrade package $package ***"
     else
       echo "*** Running piuparts for package $package ***"
-      sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ distribution="$distribution" piuparts_wrapper "$package" || true
+      $piuparts_cmdline "$package" || true
     fi
   done
 }
@@ -99,7 +103,7 @@ elif [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
   ce_pro_carrier
 else
   echo "*** No ce/pro/carrier specific packages found, executing for all artifacts/*.deb files ***"
-  sudo release="$release" SCRIPTSDIR=$PWD/source/scripts/ MIRROR=http://deb.sipwise.com/debian distribution="$distribution" DEBOOTSTRAP_OPTIONS="--keyring=/var/cache/pbuilder/base-${distribution}-amd64.cow/etc/apt/trusted.gpg" piuparts_wrapper artifacts/*.deb || true
+  $piuparts_cmdline artifacts/*.deb || true
 fi
 
 piuparts_tap piuparts.txt > piuparts.tap
