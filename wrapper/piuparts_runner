@@ -27,7 +27,7 @@ esac
 
 [ -n "$mirror" ] || mirror='http://debian.sipwise.com/debian'
 
-piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ MIRROR=$mirror distribution=$distribution DEBOOTSTRAP_OPTIONS=--keyring=/var/cache/pbuilder/base-${distribution}-amd64.cow/etc/apt/trusted.gpg piuparts_wrapper"
+piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ MIRROR=$mirror distribution=$distribution DEBOOTSTRAP_OPTIONS=--keyring=/var/cache/pbuilder/base-${distribution}-amd64.cow/etc/apt/trusted.gpg piuparts_wrapper -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
 
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"
