@@ -42,7 +42,18 @@ else
   esac
 fi
 
-piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ MIRROR=$mirror distribution=$distribution DEBOOTSTRAP_OPTIONS=--keyring=/var/cache/pbuilder/base-${distribution}-amd64.cow/etc/apt/trusted.gpg piuparts_wrapper -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
+case "$distribution" in
+  jessie)
+    debootstrap_options="--keyring=/usr/share/keyrings/debian-archive-keyring.gpg"
+    echo "** Distribution set to jessie, using Debian's default keyring instead of Sipwise' internal one **"
+    ;;
+  *)
+    debootstrap_options="--keyring=/var/cache/pbuilder/base-${distribution}-amd64.cow/etc/apt/trusted.gpg"
+    echo "** Using default debootstrap options [$debootstrap_options] **"
+    ;;
+esac
+
+piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ MIRROR=$mirror distribution=$distribution DEBOOTSTRAP_OPTIONS=$debootstrap_options piuparts_wrapper -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
 
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"
