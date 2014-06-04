@@ -71,9 +71,6 @@ if $TRUNK_RELEASE ; then
 
 # Sipwise repository
 deb http://deb.sipwise.com/autobuild/ release-trunk-${distribution} main
-
-# Sipwise ${distribution} backports
-deb http://deb.sipwise.com/${distribution}-backports/ ${distribution}-backports main
 EOF
 
 else # no $TRUNK_RELEASE
@@ -85,11 +82,21 @@ else # no $TRUNK_RELEASE
 # deb http://deb.sipwise.com/autobuild/ release-trunk-${distribution} main
 deb http://deb.sipwise.com/spce/${release}/ ${distribution} main
 deb http://deb.sipwise.com/sppro/${release}/ ${distribution} main
+EOF
+fi
+
+# we don't have jessie-backports (yet)
+case "$distribution" in
+  jessie)
+    echo "** Building for distribution $distribution - ignoring request to enable (non-existent) backports ***"
+    ;;
+  *)
+    cat >> /etc/apt/sources.list.d/sipwise.list << EOF
 
 # Sipwise ${distribution} backports
 deb http://deb.sipwise.com/${distribution}-backports/ ${distribution}-backports main
 EOF
-fi
+esac
 
 apt-get update
 apt-get --allow-unauthenticated -y install ngcp-keyring
