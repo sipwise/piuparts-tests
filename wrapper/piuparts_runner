@@ -56,7 +56,7 @@ esac
 # we need wget for apt-key installation via scripts/post_chroot_unpack_sipwise_key.sh
 debootstrap_options="$debootstrap_options --include=wget"
 
-piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ MIRROR=$mirror distribution=$distribution DEBOOTSTRAP_OPTIONS=\"$debootstrap_options\" piuparts_wrapper --mirror=$mirror -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
+piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ MIRROR=$mirror distribution=$distribution DEBOOTSTRAP_OPTIONS='$debootstrap_options' piuparts_wrapper --mirror=$mirror -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
 
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"
