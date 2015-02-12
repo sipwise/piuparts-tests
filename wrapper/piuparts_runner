@@ -8,6 +8,8 @@ rm -f piuparts.tap
 
 [ -n "$release" ] || { echo "Error: release variable not set." >&2 ; exit 1; }
 
+[ -n "$SCRIPTSDIR" ] || SCRIPTSDIR="$PWD/source/scripts/"
+
 # MT#5671 iff we get release-2.8-update, release-2.8 or release-2.8-builddeps
 # then we want to use only the '2.8' part for our release variable
 case "$release" in
