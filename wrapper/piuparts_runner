@@ -137,4 +137,4 @@ else
   $piuparts_cmdline artifacts/*.deb || true
 fi
 
-piuparts_tap piuparts.txt > piuparts.tap
+piuparts_tap --ignore-broken-symlinks piuparts.txt > piuparts.tap
