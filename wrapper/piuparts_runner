@@ -32,33 +32,40 @@ esac
 if [ -n "$mirror" ] ; then
   echo "** Environment variable \$mirror is set [$mirror], using it **"
 else
-  case "$distribution" in
-    jessie)
-      mirror='http://debian.inode.at/debian'
-      echo "** Distribution set to jessie, NOT using internal Sipwise mirror but $mirror instead **"
-      ;;
-    *)
-      mirror='http://debian.sipwise.com/debian'
-      echo "** Using Debian mirror $mirror **"
-      ;;
-  esac
+  mirror='http://debian.sipwise.com/debian'
+  echo "** Using Debian mirror $mirror **"
 fi
 
-case "$distribution" in
-  jessie)
-    debootstrap_options="--keyring=/usr/share/keyrings/debian-archive-keyring.gpg"
-    echo "** Distribution set to jessie, using Debian's default keyring instead of Sipwise' internal one **"
-    ;;
-  *)
-    debootstrap_options="--keyring=/var/cache/pbuilder/base-${distribution}-amd64.cow/etc/apt/trusted.gpg"
-    echo "** Using default debootstrap options [$debootstrap_options] **"
-    ;;
-esac
+# replace create_base_tgz of j-d-g's piuparts_wrapper script with our own variant
+# since we need custom debootstrap variables which we can't pass via $piuparts_cmdline
+create_base_tgz() {
+  [ -n "$distribution" ] || { echo "Error: distribution variable unset" >&2 ; return 1 ; }
+  [ -n "$mirror" ] || { echo "Error: mirror variable unset" >&2 ; return 1 ; }
 
-# we need wget for apt-key installation via scripts/post_chroot_unpack_sipwise_key.sh
-debootstrap_options="$debootstrap_options --include=wget"
+  local architecture="$(dpkg --print-architecture)"
 
-piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ MIRROR=$mirror distribution=$distribution DEBOOTSTRAP_OPTIONS=${!debootstrap_options} piuparts_wrapper --mirror=$mirror -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
+  [ -r "/var/cache/pbuilder/base-${distribution}-${architecture}.tgz" ] && return 0
+
+  local components='main,contrib,non-free'
+  local tmpdir=$(mktemp -d)
+
+  debootstrap --variant=minbase \
+              --components="$components" \
+              --arch="$architecture" \
+              --keyring="/var/cache/pbuilder/base-${distribution}-${architecture}.cow/etc/apt/trusted.gpg" \
+              --include=wget \
+              "$distribution" \
+              "$tmpdir" \
+              "$mirror"
+
+  (
+    cd "$tmpdir"
+    tar acf "/var/cache/pbuilder/base-${distribution}-${architecture}.tgz" *
+    rm -rf ./*
+  )
+}
+
+piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ distribution=$distribution piuparts_wrapper --mirror=$mirror -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
 
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"
@@ -122,6 +129,9 @@ find artifacts/ -name 'ngcp-upgrade-*' | grep -q '.' && RUN_UPGRADE_PACKAGES=tru
 
 RUN_HYLAXFAX_PACKAGES=false # by default assume we don't have the hylafax packages to deal with
 find artifacts/ -name '*hylafaxplus-iax*' -or -name '*hylafaxplus-diva*' | grep -q '.' && RUN_HYLAXFAX_PACKAGES=true
+
+# make sure the environment for piuparts is available
+create_base_tgz
 
 if [ "$RUN_HYLAXFAX_PACKAGES" = "true" ] ; then
   echo "*** Found hylafax specific packages, executing hylafax_packages ***"
