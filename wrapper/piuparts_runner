@@ -110,7 +110,9 @@ hylafax_packages() {
 
 upgrade_packages() {
   for package in artifacts/*.deb ; do
-    if [[ $package =~ ngcp-upgrade-2.(2|4|5|6|7) ]] ; then
+    if [[ $package =~ ngcp-upgrade-2.(2|4|5|6|7) ]] || \
+       [[ $package =~ ngcp-upgrade-3.(0|1) ]] || \
+       [[ $package =~ ngcp-upgrade-mr3.(0|1|2|3|4|5|6) ]] ; then
       echo "*** Skipping outdated upgrade package $package ***"
     else
       echo "*** Running piuparts for package $package ***"
