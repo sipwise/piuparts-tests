@@ -12,7 +12,7 @@ rm -f piuparts.tap
 
 # /var/cache/pbuilder/ exists on all our slaves and if there's enough
 # memory available then it's available as tmpfs
-TMPDIR="$(mktemp -d --tmpdir=/var/cache/pbuilder/)"
+[ -n "$TMPDIR" ] || TMPDIR="$(mktemp -d --tmpdir=/var/cache/pbuilder/)"
 
 # MT#5671 iff we get release-2.8-update, release-2.8 or release-2.8-builddeps
 # then we want to use only the '2.8' part for our release variable
