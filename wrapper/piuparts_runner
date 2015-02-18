@@ -154,3 +154,5 @@ else
 fi
 
 piuparts_tap --ignore-broken-symlinks piuparts.txt > piuparts.tap
+
+rm -rf "$TMPDIR"
