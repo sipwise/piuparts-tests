@@ -17,6 +17,8 @@ if [ -z "$release" ] ; then
   echo "*** No release variable set, using default [$release] ***"
 fi
 
+TMPDIR='/tmp' # make sure we don't get the $TMPDIR pointing to piuparts' tmpfs
+
 # make sure we can rely on wget being present for checks
 type wget >/dev/null 2>&1 || apt-get --allow-unauthenticated -y install wget
 
