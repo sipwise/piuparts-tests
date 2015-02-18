@@ -10,6 +10,8 @@ rm -f piuparts.tap
 
 [ -n "$SCRIPTSDIR" ] || SCRIPTSDIR="$PWD/source/scripts/"
 
+[ -n "$PIUPARTS_BUILDDIR" ] || PIUPARTS_BUILDDIR="$(sudo mktemp -d --tmpdir=/var/cache/pbuilder/ --suffix=_piuparts_tmp)"
+
 # MT#5671 iff we get release-2.8-update, release-2.8 or release-2.8-builddeps
 # then we want to use only the '2.8' part for our release variable
 case "$release" in
@@ -65,7 +67,7 @@ create_base_tgz() {
   )
 }
 
-piuparts_cmdline="sudo release=$release SCRIPTSDIR=$PWD/source/scripts/ distribution=$distribution piuparts_wrapper --mirror=$mirror -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
+piuparts_cmdline="sudo release=$release PIUPARTS_BUILDDIR=$PIUPARTS_BUILDDIR SCRIPTSDIR=$PWD/source/scripts/ distribution=$distribution piuparts_wrapper --mirror=$mirror -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
 
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"
