@@ -53,7 +53,7 @@ create_base_tgz() {
   local components='main,contrib,non-free'
   local tmpdir=$(mktemp -d)
 
-  debootstrap --variant=minbase \
+  sudo debootstrap --variant=minbase \
               --components="$components" \
               --arch="$architecture" \
               --keyring="/var/cache/pbuilder/base-${distribution}-${architecture}.cow/etc/apt/trusted.gpg" \
@@ -64,7 +64,7 @@ create_base_tgz() {
 
   (
     cd "$tmpdir"
-    tar acf "/var/cache/pbuilder/base-${distribution}-${architecture}.tgz" *
+    sudo tar acf "/var/cache/pbuilder/base-${distribution}-${architecture}.tgz" *
     rm -rf ./*
   )
 }
