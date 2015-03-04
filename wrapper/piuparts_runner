@@ -2,6 +2,8 @@
 
 set -x
 
+export PATH='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
 rm -f piuparts.tap
 
 [ -d artifacts ] || { echo "Error: directory artifacts does not exist." >&2 ; exit 1 ; }
