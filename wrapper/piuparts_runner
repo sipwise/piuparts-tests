@@ -153,4 +153,4 @@ fi
 
 piuparts_tap --ignore-broken-symlinks piuparts.txt > piuparts.tap
 
-rmdir "$PIUPARTS_TMPDIR"
+sudo rmdir "$PIUPARTS_TMPDIR"
