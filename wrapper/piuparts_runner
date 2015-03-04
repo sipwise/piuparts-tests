@@ -60,12 +60,12 @@ create_base_tgz() {
               --include=wget \
               "$distribution" \
               "$tmpdir" \
-              "$mirror"
+              "$mirror" || exit 1
 
   (
     cd "$tmpdir"
-    sudo tar acf "/var/cache/pbuilder/base-${distribution}-${architecture}.tgz" *
-    rm -rf ./*
+    sudo tar acf "/var/cache/pbuilder/base-${distribution}-${architecture}.tgz" * || exit 1
+    sudo rm -rf "$tmpdir"
   )
 }
 
