@@ -10,7 +10,7 @@
 
 set -e
 
-default_release=3.7
+default_release=mr3.7
 
 if [ -z "$release" ] ; then
   release="$default_release"
