@@ -1,76 +1,67 @@
 #!/bin/bash
 
 set -x
+set -u
 
 export PATH='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
 rm -f piuparts.tap
 
-[ -d artifacts ] || { echo "Error: directory artifacts does not exist." >&2 ; exit 1 ; }
+[ -d artifacts ]           || { echo "Error: directory 'artifacts' does not exist." >&2 ; exit 1 ; }
+[ -d sources.list.d ]      || { echo "Error: directory 'sources.list.d' does not exist." >&2 ; exit 1 ; }
+[ -n "${distribution:-}" ] || { echo "Error: variable 'distribution' is unset." >&2 ; exit 1 ; }
 
-[ -n "$release" ] || { echo "Error: release variable not set." >&2 ; exit 1; }
+# support overwriting on command line, e.g. for debugging
+[ -n "${PIUPARTS_BASEDIR:-}" ] || PIUPARTS_BASEDIR="$(sudo mktemp --dry-run -d --tmpdir=/var/cache/pbuilder/ --suffix=_piuparts_basetmp)"
+[ -n "${PIUPARTS_TMPDIR:-}" ]  || PIUPARTS_TMPDIR="$(sudo mktemp -d --tmpdir=/var/cache/pbuilder/ --suffix=_piuparts_tmp)"
+[ -n "${SCRIPTSDIR:-}" ]       || SCRIPTSDIR="$PWD/source/scripts/"
+[ -n "${architecture:-}" ]     || architecture="$(dpkg --print-architecture)"
+[ -n "${mirror:-}" ]           || mirror='http://debian.sipwise.com/debian'
 
-[ -n "$SCRIPTSDIR" ] || SCRIPTSDIR="$PWD/source/scripts/"
+echo "*** Executing $0 ***"
+echo "*** Using $PIUPARTS_BASEDIR as \$PIUPARTS_BASEDIR ***"
+echo "*** Using $PIUPARTS_TMPDIR as \$PIUPARTS_TMPDIR ***"
+echo "*** Using $SCRIPTSDIR as \$SCRIPTSDIR ***"
+echo "*** Using $architecture as \$architecture ***"
+echo "*** Using $distribution as \$distribution ***"
+echo "*** Using $mirror as \$mirror ***"
 
-[ -n "$PIUPARTS_TMPDIR" ] || PIUPARTS_TMPDIR="$(sudo mktemp -d --tmpdir=/var/cache/pbuilder/ --suffix=_piuparts_tmp)"
+# set up sources.list, apt-preferences,... as needed
+prepare_environment() {
+  # do not operate on original to avoid modifications and problems with simultaneous runs
+  echo "*** Creating copy of /var/cache/pbuilder/base-${distribution}-${architecture}.cow ***"
+  sudo cp -a "/var/cache/pbuilder/base-${distribution}-${architecture}.cow" "$PIUPARTS_BASEDIR"
 
-# MT#5671 iff we get release-2.8-update, release-2.8 or release-2.8-builddeps
-# then we want to use only the '2.8' part for our release variable
-case "$release" in
-  release-*)
-    release="${release##release-}"
-    release="${release%%-update}"
-    release="${release%%-builddeps}"
-    ;;
-  none)
-    release=trunk
-    ;;
-esac
+  echo "*** Setting up sources.list ***"
+  sudo cp sources.list.d/sources.list   "$PIUPARTS_BASEDIR"/etc/apt/sources.list
+  sudo cp sources.list.d/builddeps.list "$PIUPARTS_BASEDIR"/etc/apt/sources.list.d/
 
-# adjust Debian/release depending on ngcp version
-case $release in
-  2.*) [ -n "$distribution" ] || distribution="squeeze" ;;
-    *) [ -n "$distribution" ] || distribution="wheezy" ;;
-esac
+  echo "*** Setting up apt_preferences ***"
+  if [ -f sources.list.d/preferences ] ; then
+    sudo cp sources.list.d/preferences "$PIUPARTS_BASEDIR"/etc/apt/preferences
+  else
+    cat << EOF | sudo tee "$PIUPARTS_BASEDIR"/etc/apt/preferences
+Package: *
+Pin: release o=Sipwise
+Pin-Priority: 990
 
-if [ -n "$mirror" ] ; then
-  echo "** Environment variable \$mirror is set [$mirror], using it **"
-else
-  mirror='http://debian.sipwise.com/debian'
-  echo "** Using Debian mirror $mirror **"
-fi
-
-# replace create_base_tgz of j-d-g's piuparts_wrapper script with our own variant
-# since we need custom debootstrap variables which we can't pass via $piuparts_cmdline
-create_base_tgz() {
-  [ -n "$distribution" ] || { echo "Error: distribution variable unset" >&2 ; return 1 ; }
-  [ -n "$mirror" ] || { echo "Error: mirror variable unset" >&2 ; return 1 ; }
-
-  local architecture="$(dpkg --print-architecture)"
-
-  [ -r "/var/cache/pbuilder/base-${distribution}-${architecture}.tgz" ] && return 0
-
-  local components='main,contrib,non-free'
-  local tmpdir=$(mktemp -d)
-
-  sudo debootstrap --variant=minbase \
-              --components="$components" \
-              --arch="$architecture" \
-              --keyring="/var/cache/pbuilder/base-${distribution}-${architecture}.cow/etc/apt/trusted.gpg" \
-              --include=wget \
-              "$distribution" \
-              "$tmpdir" \
-              "$mirror" || exit 1
-
-  (
-    cd "$tmpdir"
-    sudo tar acf "/var/cache/pbuilder/base-${distribution}-${architecture}.tgz" * || exit 1
-    sudo rm -rf "$tmpdir"
-  )
+Package: *
+Pin: release o=The Sipwise VoIP platform
+Pin-Priority: 990
+EOF
+  fi
 }
 
-piuparts_cmdline="sudo release=$release PIUPARTS_TMPDIR=$PIUPARTS_TMPDIR SCRIPTSDIR=$PWD/source/scripts/ distribution=$distribution piuparts_wrapper --mirror=$mirror -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
+# build the actual piuparts command line
+piuparts_cmdline="sudo piuparts \
+  --warn-on-leftovers-after-purge --skip-logrotatefiles-test --log-file=piuparts.txt \
+  --distribution=$distribution --mirror=$mirror \
+  --scriptsdir=$SCRIPTSDIR --tmpdir=$PIUPARTS_TMPDIR \
+  --existing-chroot=$PIUPARTS_BASEDIR \
+  -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
+echo "*** Using '$piuparts_cmdline' as piuparts_cmdline ***"
 
+# wrapper for CE vs PRO vs CARRIER packages
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"
   if find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\* | grep -q '.' ; then
@@ -88,6 +79,7 @@ ce_pro_carrier() {
   fi
 }
 
+# hylafax specific workaround
 hylafax_packages() {
   for package in artifacts/*.deb ; do
     if [[ $package =~ hylafaxplus-diva ]] ; then
@@ -112,15 +104,46 @@ hylafax_packages() {
   done
 }
 
+# skip upgrade packages except for the current latest + latest LTS release,
+# otherwise runtime explodes
 upgrade_packages() {
+
+  latest_release="$(meta-release-helper latest Release)"
+
+  if [ -z "${latest_release:-}" ] ; then
+    echo "Warning: failed to identify latest NGCP Release"
+    return 0
+  fi
+
+  latest_lts_release="$(meta-release-helper latest_lts Release)"
+
+  if [ -z "${latest_lts_release:-}" ] ; then
+    echo "Warning: failed to identify latest NGCP LTS Release"
+    return 0
+  fi
+
+  # reduce to two digit versions, so mr3.7.2 becomes mr3.7
+  case "$latest_release" in
+    mr*.*.*)
+      latest_release="${latest_release%.*}"
+      ;;
+  esac
+
+  # reduce to two digit versions, so mr3.8.1 becomes mr3.8
+  case "$latest_lts_release" in
+    mr*.*.*)
+      latest_lts_release="${latest_lts_release%.*}"
+      ;;
+  esac
+
   for package in artifacts/*.deb ; do
-    if [[ $package =~ ngcp-upgrade-2.(2|4|5|6|7) ]] || \
-       [[ $package =~ ngcp-upgrade-3.(0|1) ]] || \
-       [[ $package =~ ngcp-upgrade-mr3.(0|1|2|3|4|5|6) ]] ; then
-      echo "*** Skipping outdated upgrade package $package ***"
-    else
+    if [[ $package =~ ngcp-upgrade-${latest_release} ]]     || \
+       [[ $package =~ ngcp-upgrade-${latest_lts_release} ]] || \
+       [[ $package =~ ngcp-upgrade-trunk ]] ; then
       echo "*** Running piuparts for package $package ***"
       $piuparts_cmdline "$package" || true
+    else
+      echo "*** Skipping upgrade package $package ***"
     fi
   done
 }
@@ -136,8 +159,8 @@ find artifacts/ -name 'ngcp-upgrade-*' | grep -q '.' && RUN_UPGRADE_PACKAGES=tru
 RUN_HYLAXFAX_PACKAGES=false # by default assume we don't have the hylafax packages to deal with
 find artifacts/ -name '*hylafaxplus-iax*' -or -name '*hylafaxplus-diva*' | grep -q '.' && RUN_HYLAXFAX_PACKAGES=true
 
-# make sure the environment for piuparts is available
-create_base_tgz
+# prepare environment for piuparts
+prepare_environment
 
 if [ "$RUN_HYLAXFAX_PACKAGES" = "true" ] ; then
   echo "*** Found hylafax specific packages, executing hylafax_packages ***"
@@ -153,6 +176,11 @@ else
   $piuparts_cmdline artifacts/*.deb || true
 fi
 
+# generate TAP output
+echo "*** Generating TAP output ***"
 piuparts_tap --ignore-broken-symlinks piuparts.txt > piuparts.tap
 
+# cleanup
+echo "*** Cleaning up ***"
 sudo rmdir "$PIUPARTS_TMPDIR"
+sudo rm -rf "$PIUPARTS_BASEDIR"
