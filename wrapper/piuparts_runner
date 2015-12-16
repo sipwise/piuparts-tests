@@ -112,57 +112,10 @@ ngcp_support_packages() {
   done
 }
 
-# skip upgrade packages except for the current latest + latest LTS release,
-# otherwise runtime explodes
-upgrade_packages() {
-
-  latest_release="$(meta-release-helper latest Release)"
-
-  if [ -z "${latest_release:-}" ] ; then
-    echo "Warning: failed to identify latest NGCP Release"
-    return 0
-  fi
-
-  latest_lts_release="$(meta-release-helper latest_lts Release)"
-
-  if [ -z "${latest_lts_release:-}" ] ; then
-    echo "Warning: failed to identify latest NGCP LTS Release"
-    return 0
-  fi
-
-  # reduce to two digit versions, so mr3.7.2 becomes mr3.7
-  case "$latest_release" in
-    mr*.*.*)
-      latest_release="${latest_release%.*}"
-      ;;
-  esac
-
-  # reduce to two digit versions, so mr3.8.1 becomes mr3.8
-  case "$latest_lts_release" in
-    mr*.*.*)
-      latest_lts_release="${latest_lts_release%.*}"
-      ;;
-  esac
-
-  for package in artifacts/*.deb ; do
-    if [[ $package =~ ngcp-upgrade-${latest_release} ]]     || \
-       [[ $package =~ ngcp-upgrade-${latest_lts_release} ]] || \
-       [[ $package =~ ngcp-upgrade-trunk ]] ; then
-      echo "*** Running piuparts for package $package ***"
-      $piuparts_cmdline "$package" || true
-    else
-      echo "*** Skipping upgrade package $package ***"
-    fi
-  done
-}
-
 RUN_CE_PRO_CARRIER=false # by default assume we don't have ce/pro/carrier specific packages
 find artifacts/ -name '*-carrier-*' -or -name '*-carrier_*' | grep -q '.' && RUN_CE_PRO_CARRIER=true
 find artifacts/ -name '*-pro-*'     -or -name '*-pro_*'     | grep -q '.' && RUN_CE_PRO_CARRIER=true
 find artifacts/ -name '*-ce-*'      -or -name '*-ce_*'      | grep -q '.' && RUN_CE_PRO_CARRIER=true
-
-RUN_UPGRADE_PACKAGES=false # by default assume we don't have the upgrade packages to deal with
-find artifacts/ -name 'ngcp-upgrade-*' | grep -q '.' && RUN_UPGRADE_PACKAGES=true
 
 RUN_HYLAXFAX_PACKAGES=false # by default assume we don't have the hylafax packages to deal with
 find artifacts/ -name '*hylafaxplus-iax*' -or -name '*hylafaxplus-diva*' | grep -q '.' && RUN_HYLAXFAX_PACKAGES=true
@@ -179,9 +132,6 @@ if [ "$RUN_NGCP_SUPPORT_PACKAGES" = "true" ] ; then
 elif [ "$RUN_HYLAXFAX_PACKAGES" = "true" ] ; then
   echo "*** Found hylafax specific packages, executing hylafax_packages ***"
   hylafax_packages
-elif [ "$RUN_UPGRADE_PACKAGES" = "true" ] ; then
-  echo "*** Found upgrade specific packages, executing upgrade_packages ***"
-  upgrade_packages
 elif [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
   echo "*** Found ce/pro/carrier specific packages, executing ce_pro_carrier ***"
   ce_pro_carrier
