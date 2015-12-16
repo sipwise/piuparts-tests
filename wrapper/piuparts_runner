@@ -62,6 +62,7 @@ piuparts_cmdline="sudo piuparts \
 echo "*** Using '$piuparts_cmdline' as piuparts_cmdline ***"
 
 # wrapper for CE vs PRO vs CARRIER packages
+# shellcheck disable=SC2046
 ce_pro_carrier() {
   echo "*** Running for CE packages ***"
   if find artifacts/ -type f ! -name \*-pro\* ! -name \*-carrier\* | grep -q '.' ; then
@@ -101,6 +102,14 @@ hylafax_packages() {
       echo "*** Running piuparts for package $package ***"
       $piuparts_cmdline "$package" || true
     fi
+  done
+}
+
+# ngcp-support specific workaround
+ngcp_support_packages() {
+  for package in artifacts/*.deb ; do
+    echo "*** Running ngcp-support specific package $package ***"
+    $piuparts_cmdline "$package" || true
   done
 }
 
@@ -159,10 +168,16 @@ find artifacts/ -name 'ngcp-upgrade-*' | grep -q '.' && RUN_UPGRADE_PACKAGES=tru
 RUN_HYLAXFAX_PACKAGES=false # by default assume we don't have the hylafax packages to deal with
 find artifacts/ -name '*hylafaxplus-iax*' -or -name '*hylafaxplus-diva*' | grep -q '.' && RUN_HYLAXFAX_PACKAGES=true
 
+RUN_NGCP_SUPPORT_PACKAGES=false # by default assume we don't have the ngcp-support* packages to deal with
+find artifacts/ -name 'ngcp-support-access*' -or -name 'ngcp-support-noaccess*' | grep -q '.' && RUN_NGCP_SUPPORT_PACKAGES=true
+
 # prepare environment for piuparts
 prepare_environment
 
-if [ "$RUN_HYLAXFAX_PACKAGES" = "true" ] ; then
+if [ "$RUN_NGCP_SUPPORT_PACKAGES" = "true" ] ; then
+  echo "*** Found ngcp-support specific packages, executing ngcp_support_packages ***"
+  ngcp_support_packages
+elif [ "$RUN_HYLAXFAX_PACKAGES" = "true" ] ; then
   echo "*** Found hylafax specific packages, executing hylafax_packages ***"
   hylafax_packages
 elif [ "$RUN_UPGRADE_PACKAGES" = "true" ] ; then
