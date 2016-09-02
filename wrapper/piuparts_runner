@@ -55,7 +55,7 @@ EOF
 # build the actual piuparts command line
 piuparts_cmdline="sudo piuparts \
   --warn-on-leftovers-after-purge --skip-logrotatefiles-test --log-file=piuparts.txt \
-  --distribution=$distribution --mirror=$mirror \
+  --distribution=$distribution --mirror=$mirror --keep-sources-list \
   --scriptsdir=$SCRIPTSDIR --tmpdir=$PIUPARTS_TMPDIR \
   --existing-chroot=$PIUPARTS_BASEDIR \
   -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
