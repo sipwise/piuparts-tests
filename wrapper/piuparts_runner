@@ -22,8 +22,8 @@ if [ -n "${PROJECTNAME:-}" ] ; then
   case "${PROJECTNAME}" in
     metapackages)
       echo "PROJECTNAME matches metapackages, using /tmp for the piuparts run instead of the tmpfs"
-      [ -n "${PIUPARTS_BASEDIR:-}" ] || PIUPARTS_BASEDIR="$(sudo mktemp --dry-run -d --tmpdir=/tmp/ --suffix=_piuparts_basetmp)"
-      [ -n "${PIUPARTS_TMPDIR:-}" ]  || PIUPARTS_TMPDIR="$(sudo mktemp -d --tmpdir=/tmp/ --suffix=_piuparts_tmp)"
+      PIUPARTS_BASEDIR="$(sudo mktemp --dry-run -d --tmpdir=/tmp/ --suffix=_piuparts_basetmp)"
+      PIUPARTS_TMPDIR="$(sudo mktemp -d --tmpdir=/tmp/ --suffix=_piuparts_tmp)"
       ;;
   esac
 fi
