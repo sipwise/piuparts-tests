@@ -123,6 +123,14 @@ ngcp_support_packages() {
   done
 }
 
+# ngcp-license-client specific workaround to handle conflicting binary packages
+ngcp_license_client() {
+  for package in artifacts/*.deb ; do
+    echo "*** Running ngcp-license-client specific package $package ***"
+    $piuparts_cmdline "$package" || true
+  done
+}
+
 RUN_CE_PRO_CARRIER=false # by default assume we don't have ce/pro/carrier specific packages
 find artifacts/ -name '*-carrier-*' -or -name '*-carrier_*' | grep -q '.' && RUN_CE_PRO_CARRIER=true
 find artifacts/ -name '*-pro-*'     -or -name '*-pro_*'     | grep -q '.' && RUN_CE_PRO_CARRIER=true
@@ -133,6 +141,9 @@ find artifacts/ -name '*hylafaxplus-iax*' -or -name '*hylafaxplus-diva*' | grep 
 
 RUN_NGCP_SUPPORT_PACKAGES=false # by default assume we don't have the ngcp-support* packages to deal with
 find artifacts/ -name 'ngcp-support-access*' -or -name 'ngcp-support-noaccess*' | grep -q '.' && RUN_NGCP_SUPPORT_PACKAGES=true
+
+RUN_LICENSE_CLIENT=false # by default assume we don't have the ngcp-license-client* packages to deal with
+find artifacts/ -name 'ngcp-license-client*' | grep -q '.' && RUN_LICENSE_CLIENT=true
 
 # prepare environment for piuparts
 prepare_environment
@@ -146,6 +157,9 @@ elif [ "$RUN_HYLAXFAX_PACKAGES" = "true" ] ; then
 elif [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
   echo "*** Found ce/pro/carrier specific packages, executing ce_pro_carrier ***"
   ce_pro_carrier
+elif [ "$RUN_LICENSE_CLIENT" = "true" ] ; then
+  echo "*** Found ngcp-license-client* packages, executing ngcp_license_client ***"
+  ngcp_license_client
 else
   echo "*** No ce/pro/carrier specific packages found, executing for all artifacts/*.deb files ***"
   $piuparts_cmdline artifacts/*.deb || true
