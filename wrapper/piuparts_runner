@@ -63,11 +63,15 @@ EOF
 }
 
 # build the actual piuparts command line
+if piuparts --help 2>&1 | grep -- --update-retries ; then
+  UPDATE_RETRIES="--update-retries=3"
+fi
+
 piuparts_cmdline="sudo piuparts \
   --warn-on-leftovers-after-purge --skip-logrotatefiles-test --log-file=piuparts.txt \
   --distribution=$distribution --mirror=$mirror --keep-sources-list \
   --scriptsdir=$SCRIPTSDIR --tmpdir=$PIUPARTS_TMPDIR \
-  --existing-chroot=$PIUPARTS_BASEDIR \
+  --existing-chroot=$PIUPARTS_BASEDIR ${UPDATE_RETRIES:-} \
   -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
 echo "*** Using '$piuparts_cmdline' as piuparts_cmdline ***"
 
