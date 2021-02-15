@@ -65,6 +65,11 @@ EOF
 # build the actual piuparts command line
 if piuparts --help 2>&1 | grep -- --update-retries ; then
   UPDATE_RETRIES="--update-retries=3"
+else
+  if command -v figlet &>/dev/null ; then
+    echo "*** WARN ***" | figlet
+  fi
+    echo "*** WARN: the installed piuparts version does not support the --update-retries=... option. See TT#16502 ***"
 fi
 
 piuparts_cmdline="sudo piuparts \
