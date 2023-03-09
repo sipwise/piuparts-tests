@@ -18,16 +18,6 @@ rm -f piuparts.tap
 [ -n "${architecture:-}" ]     || architecture="$(dpkg --print-architecture)"
 [ -n "${mirror:-}" ]           || mirror='http://debian.sipwise.com/debian'
 
-if [ -n "${PROJECTNAME:-}" ] ; then
-  case "${PROJECTNAME}" in
-    metapackages|rainbow-misc)
-      echo "PROJECTNAME is ${PROJECTNAME}, using /tmp for the piuparts run instead of the tmpfs"
-      PIUPARTS_BASEDIR="$(sudo mktemp --dry-run -d --tmpdir=/tmp/ --suffix=_piuparts_basetmp)"
-      PIUPARTS_TMPDIR="$(sudo mktemp -d --tmpdir=/tmp/ --suffix=_piuparts_tmp)"
-      ;;
-  esac
-fi
-
 echo "*** Executing $0 ***"
 echo "*** Using $PIUPARTS_BASEDIR as \$PIUPARTS_BASEDIR ***"
 echo "*** Using $PIUPARTS_TMPDIR as \$PIUPARTS_TMPDIR ***"
