@@ -26,79 +26,6 @@ echo "*** Using $architecture as \$architecture ***"
 echo "*** Using $distribution as \$distribution ***"
 echo "*** Using $mirror as \$mirror ***"
 
-# set up sources.list, apt-preferences,... for rainbow specific needs
-prepare_rainbow_environment() {
-  # do not operate on original to avoid modifications and problems with simultaneous runs
-  echo "*** Creating copy of /var/cache/pbuilder/base-${distribution}-${architecture}.cow ***"
-  sudo cp -a "/var/cache/pbuilder/base-${distribution}-${architecture}.cow" "${PIUPARTS_BASEDIR}"
-
-  echo "*** Setting up sources.list ***"
-  sudo cp sources.list.d/sources.list   "$PIUPARTS_BASEDIR"/etc/apt/sources.list
-  sudo cp sources.list.d/builddeps.list "$PIUPARTS_BASEDIR"/etc/apt/sources.list.d/
-
-  echo "*** Retrieving latest ngcp-rainbow-keyrings package from release-trunk-${distribution} ***"
-  local packages_tmp
-  packages_tmp=$(mktemp -d)
-  wget --timeout=30 -O "${packages_tmp}"/Packages.gz "https://deb.sipwise.com/autobuild/dists/release-trunk-${distribution}/main/binary-amd64/Packages.gz"
-  # sed: display paragraphs matching the "Package: ..." string, then grab string "^Version: " and display the actual version via awk
-  # sort -u to avoid duplicates in repositories
-  local version
-  version=$(zcat "${packages_tmp}"/Packages.gz | sed "/./{H;\$!d;};x;/Package: ngcp-rainbow-keyrings-pro/b;d" | awk '/^Version: / {print $2}' | sort -u)
-  rm -rf "${packages_tmp}"
-
-  if [ -z "${version:-}" ] ; then
-    echo "Error: ngcp-rainbow-keyrings-pro version for release-trunk-${distribution} could not be detected." >&2
-    exit 1
-  fi
-
-  local deb_package="ngcp-rainbow-keyrings-pro_${version}_all.deb"
-  if ! sudo wget --timeout=30 -O "${PIUPARTS_BASEDIR}"/root/"${deb_package}" "https://deb.sipwise.com/autobuild/pool/main/n/ngcp-rainbow-misc/${deb_package}" ; then
-    echo "Error: failed to download ngcp-rainbow-keyrings-pro Debian package" >&2
-    exit 1
-  fi
-
-  echo "*** Installing ngcp-rainbow-misc package inside cowbuilder environment for keyring files ***"
-  if ! sudo chroot "${PIUPARTS_BASEDIR}" dpkg -i /root/"${deb_package}" ; then
-    echo "Error: failed to install ${deb_package} inside ${PIUPARTS_BASEDIR}" >&2
-    exit 1
-  fi
-
-  echo "*** Setting up /etc/apt/sources.list.d/rainbow.list ***"
-  cat << EOF | sudo tee "${PIUPARTS_BASEDIR}"/etc/apt/sources.list.d/rainbow.list
-# installed via piuparts-tests.git / wrapper/piuparts_runner on the fly
-deb [signed-by=/usr/share/keyrings/rainbow.pgp] http://deb.rainbow.sipwise.com/rainbow bullseye-lts main non-free
-deb [signed-by=/usr/share/keyrings/mongodb.pgp] http://deb.rainbow.sipwise.com/mongodb stretch/mongodb-org/3.6 main
-EOF
-
-  if ! [ -r "${PIUPARTS_BASEDIR}"/bin/systemctl ] ; then
-    echo "*** Faking availability of systemctl tool for cloud-wrg/mongodb-org-server packages ***"
-    sudo ln -s /bin/true "${PIUPARTS_BASEDIR}"/bin/systemctl
-  fi
-
-  echo "*** Setting up apt_preferences ***"
-  if [ -f sources.list.d/preferences ] ; then
-    sudo cp sources.list.d/preferences "$PIUPARTS_BASEDIR"/etc/apt/preferences
-  else
-    cat << EOF | sudo tee "$PIUPARTS_BASEDIR"/etc/apt/preferences
-Package: *
-Pin: release o=Sipwise
-Pin-Priority: 990
-
-Package: *
-Pin: release o=The Sipwise VoIP platform
-Pin-Priority: 990
-
-Package: *
-Pin: release o=mongodb
-Pin-Priority: 600
-
-Package: *
-Pin: release o=Rainbow R&D
-Pin-Priority: 600
-EOF
-  fi
-}
-
 # set up sources.list, apt-preferences,... as needed
 prepare_environment() {
   # do not operate on original to avoid modifications and problems with simultaneous runs
@@ -218,14 +145,7 @@ RUN_LICENSE_CLIENT=false # by default assume we don't have the ngcp-license-clie
 find artifacts/ -name 'ngcp-license-client*' | grep -q '.' && RUN_LICENSE_CLIENT=true
 
 # prepare environment for piuparts
-case "${PROJECTNAME}" in
-  rainbow-misc)
-    prepare_rainbow_environment
-    ;;
-  *)
-    prepare_environment
-    ;;
-esac
+prepare_environment
 
 if [ "$RUN_NGCP_SUPPORT_PACKAGES" = "true" ] ; then
   echo "*** Found ngcp-support specific packages, executing ngcp_support_packages ***"
