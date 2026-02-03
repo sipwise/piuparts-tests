@@ -66,8 +66,7 @@ piuparts_cmdline="sudo piuparts \
   --warn-on-leftovers-after-purge --skip-logrotatefiles-test --log-file=piuparts.txt \
   --distribution=$distribution --mirror=$mirror --keep-sources-list \
   --scriptsdir=$SCRIPTSDIR --tmpdir=$PIUPARTS_TMPDIR \
-  --existing-chroot=$PIUPARTS_BASEDIR ${UPDATE_RETRIES:-} \
-  -i etc/init.d/ngcp-hylafaxplus -i etc/default/ngcp-iaxmodem"
+  --existing-chroot=$PIUPARTS_BASEDIR ${UPDATE_RETRIES:-}"
 echo "*** Using '$piuparts_cmdline' as piuparts_cmdline ***"
 
 # wrapper for CE vs PRO vs CARRIER packages
@@ -87,31 +86,6 @@ ce_pro_carrier() {
   if find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\* | grep -q '.' ; then
     $piuparts_cmdline $(find artifacts/ -type f ! -name \*-pro\* ! -name \*-ce\*) || true
   fi
-}
-
-# hylafax specific workaround
-hylafax_packages() {
-  for package in artifacts/*.deb ; do
-    if [[ $package =~ hylafaxplus-diva ]] ; then
-      echo "*** Running hylafaxplus-diva specific package $package ***"
-      $piuparts_cmdline "$package" || true
-    elif [[ $package =~ hylafaxplus-iax ]] ; then
-      echo "*** Running hylafaxplus-iax specific package $package ***"
-      $piuparts_cmdline "$package" || true
-    elif [[ $package =~ -ce ]] ; then
-      echo "*** Running CE package $package ***"
-      $piuparts_cmdline "$package" || true
-    elif [[ $package =~ -pro ]] ; then
-      echo "*** Running PRO package $package ***"
-      $piuparts_cmdline "$package" || true
-    elif [[ $package =~ -carrier ]] ; then
-      echo "*** Running carrier package $package ***"
-      $piuparts_cmdline "$package" || true
-    else
-      echo "*** Running piuparts for package $package ***"
-      $piuparts_cmdline "$package" || true
-    fi
-  done
 }
 
 # ngcp-support specific workaround
@@ -135,9 +109,6 @@ find artifacts/ -name '*-carrier-*' -or -name '*-carrier_*' | grep -q '.' && RUN
 find artifacts/ -name '*-pro-*'     -or -name '*-pro_*'     | grep -q '.' && RUN_CE_PRO_CARRIER=true
 find artifacts/ -name '*-ce-*'      -or -name '*-ce_*'      | grep -q '.' && RUN_CE_PRO_CARRIER=true
 
-RUN_HYLAXFAX_PACKAGES=false # by default assume we don't have the hylafax packages to deal with
-find artifacts/ -name '*hylafaxplus-iax*' -or -name '*hylafaxplus-diva*' | grep -q '.' && RUN_HYLAXFAX_PACKAGES=true
-
 RUN_NGCP_SUPPORT_PACKAGES=false # by default assume we don't have the ngcp-support* packages to deal with
 find artifacts/ -name 'ngcp-support-access*' -or -name 'ngcp-support-noaccess*' | grep -q '.' && RUN_NGCP_SUPPORT_PACKAGES=true
 
@@ -150,9 +121,6 @@ prepare_environment
 if [ "$RUN_NGCP_SUPPORT_PACKAGES" = "true" ] ; then
   echo "*** Found ngcp-support specific packages, executing ngcp_support_packages ***"
   ngcp_support_packages
-elif [ "$RUN_HYLAXFAX_PACKAGES" = "true" ] ; then
-  echo "*** Found hylafax specific packages, executing hylafax_packages ***"
-  hylafax_packages
 elif [ "$RUN_CE_PRO_CARRIER" = "true" ] ; then
   echo "*** Found ce/pro/carrier specific packages, executing ce_pro_carrier ***"
   ce_pro_carrier
