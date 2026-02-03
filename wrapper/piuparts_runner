@@ -66,7 +66,8 @@ piuparts_cmdline="sudo piuparts \
   --warn-on-leftovers-after-purge --skip-logrotatefiles-test --log-file=piuparts.txt \
   --distribution=$distribution --mirror=$mirror --keep-sources-list \
   --scriptsdir=$SCRIPTSDIR --tmpdir=$PIUPARTS_TMPDIR \
-  --existing-chroot=$PIUPARTS_BASEDIR ${UPDATE_RETRIES:-}"
+  --existing-chroot=$PIUPARTS_BASEDIR ${UPDATE_RETRIES:-} \
+  -i /etc/localtime"
 echo "*** Using '$piuparts_cmdline' as piuparts_cmdline ***"
 
 # wrapper for CE vs PRO vs CARRIER packages
